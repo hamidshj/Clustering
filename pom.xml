@@ -13,5 +13,10 @@
         <artifactId>rtree</artifactId>
         <version>0.8-RC10</version>
     </dependency>
+    <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>23.5-jre</version> <!-- or 23.5-android for the Android flavor -->
+    </dependency>
 </dependencies>
 </project>
