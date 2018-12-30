@@ -22,7 +22,7 @@ public class Start {
     public static void main(String[] args) throws Exception {
         readPoint(PRE_PATH + "input1");
         connectNode(4);
-
+        calculateEdgeBetweenness(2);
         rTree.visualize(6000, 6000)
                 .save("target/mytree.png");
     }
@@ -33,39 +33,47 @@ public class Start {
         HashMap<Point, Double> value = new HashMap<Point, Double>();
 
         for (Point point : graph.nodes()) {
-            distance.clear();
+            seen.clear();
             value.clear();
+            distance.clear();
             seen.add(point);
             value.put(point, 0.0);
             distance.put(point, 0);
 
+            int i = 0;
+            while (distance.get(seen.getLast()) <= depth) {
+                Point temp = seen.get(i);
 
-            while (distance.get(seen.getLast()) <= depth)
-                for (Point point2 : graph.predecessors(seen.getLast()))
+                for (Point point2 : graph.predecessors(temp))
                     if (distance.get(point2) == null) {
-                        distance.put(point2, distance.get(seen.getLast()) + 1);
+                        distance.put(point2, distance.get(temp) + 1);
                         seen.add(point2);
-                        value.put(point2, 0.0);
+                        value.put(point2, 1.0);
                     }
-            seen.removeLast();
-
-
-            Collections.reverse(seen);
-            for (Point point2 : seen) {
-                Set<Point> neighbor = graph.predecessors(point2);
-                double totalDis = 0;
-                for (Point point3 : neighbor)
-                    if (distance.get(point3) < distance.get(point2))
-                        totalDis += point2.distance(point3);
-                for (Point point3 : neighbor)
-                    if (distance.get(point3) < distance.get(point2)) {
-                        value.put(point3, value.get(point3) + point2.distance(point3) / totalDis);
-                    }
-
+                i++;
+                if (i == seen.size()) break;
 
             }
 
 
+            Collections.reverse(seen);
+            seen.removeLast();
+            for (Point point2 : seen) {
+                if (distance.get(point2) <= depth) {
+                    Set<Point> neighborPoint2 = graph.predecessors(point2);
+                    double totalDis = 0;
+                    for (Point point3 : neighborPoint2)
+                        if (distance.get(point3) != null && distance.get(point3) < distance.get(point2))
+                            totalDis += point2.distance(point3);
+                    for (Point point3 : neighborPoint2)
+                        if (distance.get(point3) != null && distance.get(point3) < distance.get(point2)) {
+                            double score = (point2.distance(point3) / totalDis) * value.get(point2);
+                            value.put(point3, value.get(point3) + score);
+                            nodeEdges.get(point2).put(point3, nodeEdges.get(point2).get(point3) + score);
+                            nodeEdges.get(point3).put(point2, nodeEdges.get(point3).get(point2) + score);
+                        }
+                }
+            }
         }
     }
 
@@ -78,6 +86,7 @@ public class Start {
                 if (node != neighbor) {
                     graph.putEdge(node, neighbor);
                     nodeEdges.get(node).put(neighbor, 0.0);
+                    nodeEdges.get(neighbor).put(node, 0.0);
                 }
             }
         }
