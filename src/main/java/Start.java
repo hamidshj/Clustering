@@ -21,10 +21,22 @@ public class Start {
     private static HashMap<Point, HashMap<Point, Double>> nodeEdges = new HashMap<Point, HashMap<Point, Double>>();
 
     public static void main(String[] args) throws Exception {
+        long startTime = System.currentTimeMillis();
         readPoint(PRE_PATH + "input1");
-        connectNode(10);
+        System.out.println("read point time: "+(System.currentTimeMillis()-startTime));
+
+        startTime=System.currentTimeMillis();
+        connectNode(5);
+        System.out.println("connect time: "+(System.currentTimeMillis()-startTime));
+
+        startTime=System.currentTimeMillis();
         calculateEdgeBetweenness(2);
-        export("","vna");
+        System.out.println("calculate edge betweenness time: "+(System.currentTimeMillis()-startTime));
+
+        startTime=System.currentTimeMillis();
+        export("", "vna");
+        System.out.println("export time: "+(System.currentTimeMillis()-startTime));
+
         rTree.visualize(6000, 6000)
                 .save("target/mytree.png");
     }
@@ -85,7 +97,7 @@ public class Start {
         for (Point node : graph.nodes()) {
             List<Point> neighbors = kNearestItem(node, k);
             for (Point neighbor : neighbors) {
-                if (node != neighbor) {
+                if (node != neighbor && (node.x() != neighbor.x() || node.y() != neighbor.y())) {
                     graph.putEdge(node, neighbor);
                     nodeEdges.get(node).put(neighbor, 0.0);
                     nodeEdges.get(neighbor).put(node, 0.0);
