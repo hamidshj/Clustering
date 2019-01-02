@@ -21,7 +21,7 @@ public class Start {
 
     public static void main(String[] args) throws Exception {
         readPoint(PRE_PATH + "input1");
-        connectNode(4);
+        connectNode(5);
         calculateEdgeBetweenness(10);
         rTree.visualize(6000, 6000)
                 .save("target/mytree.png");
@@ -109,7 +109,6 @@ public class Start {
         String st;
         while ((st = br.readLine()) != null) {
             String[] dim = st.split(" ");
-            System.out.println(st);
             Point temp = point(Integer.parseInt(dim[1]), Integer.parseInt(dim[2]));
             n++;
             rTree = rTree.add(n, temp);
@@ -117,4 +116,10 @@ public class Start {
         }
     }
 
+    public static void export(String path, String Type){
+        switch (Type){
+
+        }
+    }
+    
 }

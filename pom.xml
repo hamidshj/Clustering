@@ -7,7 +7,19 @@
     <groupId>HamidShahrivariJoghan</groupId>
     <artifactId>Clustering</artifactId>
     <version>0.1.0</version>
-<dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>7</source>
+                    <target>7</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <dependencies>
     <dependency>
         <groupId>com.github.davidmoten</groupId>
         <artifactId>rtree</artifactId>
