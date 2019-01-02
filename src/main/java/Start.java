@@ -7,6 +7,7 @@ import com.google.common.graph.MutableGraph;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.PrintWriter;
 import java.util.*;
 
 import static com.github.davidmoten.rtree.geometry.Geometries.point;
@@ -21,8 +22,9 @@ public class Start {
 
     public static void main(String[] args) throws Exception {
         readPoint(PRE_PATH + "input1");
-        connectNode(5);
-        calculateEdgeBetweenness(10);
+        connectNode(10);
+        calculateEdgeBetweenness(2);
+        export("","vna");
         rTree.visualize(6000, 6000)
                 .save("target/mytree.png");
     }
@@ -116,10 +118,36 @@ public class Start {
         }
     }
 
-    public static void export(String path, String Type){
-        switch (Type){
+    public static void export(String path, String Type) {
+        String temp = "";
+        int index = 0;
 
+        HashMap<Point, Integer> nodeToInteger = new HashMap<>();
+        for (Point point : graph.nodes())
+            nodeToInteger.put(point, index++);
+
+        try (PrintWriter out = new PrintWriter(path + "export.txt")) {
+            switch (Type) {
+                case ("vna"):
+                    out.println("*Node properties");
+                    out.println("ID x y size color shortlabel");
+                    for (Point point : graph.nodes())
+                        temp += nodeToInteger.get(point) + " " + point.x() + " " + point.y() + " 10.0 153 "
+                                + nodeEdges.get(point).values().stream().mapToDouble(i -> i).sum() / nodeEdges.get(point).values().size() + "\n";
+                    out.println(temp);
+                    temp = "";
+                    out.println("*Tie data");
+                    out.println("from to strength");
+
+                    for (Point point : graph.nodes()) {
+                        HashMap<Point, Double> neighbors = nodeEdges.get(point);
+                        for (Point point2 : neighbors.keySet())
+                            temp += nodeToInteger.get(point) + " " + nodeToInteger.get(point2) + " " + neighbors.get(point2).intValue() + "\n";
+                    }
+                    out.println(temp);
+                    break;
+            }
+        } catch (Exception e) {
         }
     }
-    
 }
