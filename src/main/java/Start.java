@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.util.*;
+import net.sf.javaml.core.kdtree.*;
 
 import static com.github.davidmoten.rtree.geometry.Geometries.point;
 
@@ -19,7 +20,7 @@ public class Start {
     private static int n = 0;
     private static MutableGraph<Point> graph = GraphBuilder.undirected().build();
     private static HashMap<Point, HashMap<Point, Double>> nodeEdges = new HashMap<Point, HashMap<Point, Double>>();
-
+    private static KDTree kdTree=new KDTree(2);
     public static void main(String[] args) throws Exception {
         long startTime = System.currentTimeMillis();
         readPoint(PRE_PATH + "input1");
@@ -95,9 +96,11 @@ public class Start {
         for (Point point : graph.nodes()) nodeEdges.put(point, new HashMap<Point, Double>());
 
         for (Point node : graph.nodes()) {
-            List<Point> neighbors = kNearestItem(node, k);
-            for (Point neighbor : neighbors) {
-                if (node != neighbor && (node.x() != neighbor.x() || node.y() != neighbor.y())) {
+            //List<Point> neighbors = kNearestItem(node, k);
+            Object[] neighbors =  kdTree.nearest(new double[]{node.x(), node.y()}, k);
+            for (Object neighborT :  neighbors) {
+                Point neighbor=(Point)neighborT;
+                if ((node.x() !=  neighbor.x() || node.y() != neighbor.y())) {
                     graph.putEdge(node, neighbor);
                     nodeEdges.get(node).put(neighbor, 0.0);
                     nodeEdges.get(neighbor).put(node, 0.0);
@@ -123,9 +126,10 @@ public class Start {
         String st;
         while ((st = br.readLine()) != null) {
             String[] dim = st.split(" ");
-            Point temp = point(Integer.parseInt(dim[1]), Integer.parseInt(dim[2]));
+            Point temp = point(Integer.parseInt(dim[0]), Integer.parseInt(dim[1]));
             n++;
-            rTree = rTree.add(n, temp);
+            kdTree.insert(new double[]{Double.parseDouble(dim[0]),Double.parseDouble(dim[1])},point(Double.parseDouble(dim[0]),Double.parseDouble(dim[1])));
+           // rTree = rTree.add(n, temp);
             graph.addNode(temp);
         }
     }
@@ -144,8 +148,8 @@ public class Start {
                     out.println("*Node properties");
                     out.println("ID x y size color shortlabel");
                     for (Point point : graph.nodes())
-                        temp += nodeToInteger.get(point) + " " + point.x() + " " + point.y() + " 10.0 153 "
-                                + nodeEdges.get(point).values().stream().mapToDouble(i -> i).sum() / nodeEdges.get(point).values().size() + "\n";
+                        out.println( nodeToInteger.get(point) + " " + point.x() + " " + point.y() + " 10.0 153 "
+                                + nodeEdges.get(point).values().stream().mapToDouble(i -> i).sum() / nodeEdges.get(point).values().size() );
                     out.println(temp);
                     temp = "";
                     out.println("*Tie data");
@@ -154,7 +158,7 @@ public class Start {
                     for (Point point : graph.nodes()) {
                         HashMap<Point, Double> neighbors = nodeEdges.get(point);
                         for (Point point2 : neighbors.keySet())
-                            temp += nodeToInteger.get(point) + " " + nodeToInteger.get(point2) + " " + neighbors.get(point2).intValue() + "\n";
+                            out.println( nodeToInteger.get(point) + " " + nodeToInteger.get(point2) + " " + neighbors.get(point2).intValue() );
                     }
                     out.println(temp);
                     break;
