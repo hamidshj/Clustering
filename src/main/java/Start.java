@@ -1,6 +1,7 @@
 import com.github.davidmoten.rtree.Entry;
 import com.github.davidmoten.rtree.RTree;
 import com.github.davidmoten.rtree.geometry.Point;
+import com.github.davidmoten.rx.util.Pair;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 
@@ -9,6 +10,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.util.*;
+
 import net.sf.javaml.core.kdtree.*;
 
 import static com.github.davidmoten.rtree.geometry.Geometries.point;
@@ -18,28 +20,52 @@ public class Start {
     private static final int MAX_DISTANCE = Integer.MAX_VALUE;
     private static RTree<Integer, Point> rTree;
     private static int n = 0;
+    private static int m = 0;
     private static MutableGraph<Point> graph = GraphBuilder.undirected().build();
     private static HashMap<Point, HashMap<Point, Double>> nodeEdges = new HashMap<Point, HashMap<Point, Double>>();
-    private static KDTree kdTree=new KDTree(2);
+    private static Pair<Pair<Point, Point>, Double>[] edgeList;
+    private static KDTree kdTree = new KDTree(2);
+
     public static void main(String[] args) throws Exception {
         long startTime = System.currentTimeMillis();
         readPoint(PRE_PATH + "input1");
-        System.out.println("read point time: "+(System.currentTimeMillis()-startTime));
+        System.out.println("read point time: " + (System.currentTimeMillis() - startTime));
 
-        startTime=System.currentTimeMillis();
+        startTime = System.currentTimeMillis();
         connectNode(5);
-        System.out.println("connect time: "+(System.currentTimeMillis()-startTime));
+        System.out.println("connect time: " + (System.currentTimeMillis() - startTime));
 
-        startTime=System.currentTimeMillis();
-        calculateEdgeBetweenness(2);
-        System.out.println("calculate edge betweenness time: "+(System.currentTimeMillis()-startTime));
+        startTime = System.currentTimeMillis();
+        calculateEdgeBetweenness(4);
+        System.out.println("calculate edge betweenness time: " + (System.currentTimeMillis() - startTime));
 
-        startTime=System.currentTimeMillis();
+        startTime = System.currentTimeMillis();
         export("", "vna");
-        System.out.println("export time: "+(System.currentTimeMillis()-startTime));
+        System.out.println("export time: " + (System.currentTimeMillis() - startTime));
+
+        startTime = System.currentTimeMillis();
+        sortEdges();
+        System.out.println("sort time: " + (System.currentTimeMillis() - startTime));
 
         rTree.visualize(6000, 6000)
-                .save("target/mytree.png");
+                .save(PRE_PATH + "mytree.png");
+    }
+
+    public static void sortEdges() {
+        edgeList = new Pair[graph.edges().size()];
+        int i = 0;
+        for (Point point : graph.nodes()) {
+            HashMap<Point, Double> neighbors = nodeEdges.get(point);
+            for (Point point2 : neighbors.keySet())
+                if (isGreater(point, point2))
+                    edgeList[i++] = new Pair(new Pair(point, point2), neighbors.get(point2));
+        }
+        MergeSort mms = new MergeSort();
+        mms.sort(edgeList);
+        for (Pair<Pair<Point, Point>, Double> ii : edgeList) {
+            System.out.print(ii.right());
+            System.out.print(" ");
+        }
     }
 
     public static void calculateEdgeBetweenness(int depth) {
@@ -97,16 +123,18 @@ public class Start {
 
         for (Point node : graph.nodes()) {
             //List<Point> neighbors = kNearestItem(node, k);
-            Object[] neighbors =  kdTree.nearest(new double[]{node.x(), node.y()}, k);
-            for (Object neighborT :  neighbors) {
-                Point neighbor=(Point)neighborT;
-                if ((node.x() !=  neighbor.x() || node.y() != neighbor.y())) {
+            Object[] neighbors = kdTree.nearest(new double[]{node.x(), node.y()}, k);
+            for (Object neighborT : neighbors) {
+                Point neighbor = (Point) neighborT;
+                if ((node.x() != neighbor.x() || node.y() != neighbor.y())) {
                     graph.putEdge(node, neighbor);
                     nodeEdges.get(node).put(neighbor, 0.0);
                     nodeEdges.get(neighbor).put(node, 0.0);
+                    m++;
                 }
             }
         }
+        m = m / 2;
     }
 
     public static List<Point> kNearestItem(Point point, int k) {
@@ -126,10 +154,10 @@ public class Start {
         String st;
         while ((st = br.readLine()) != null) {
             String[] dim = st.split(" ");
-            Point temp = point(Integer.parseInt(dim[0]), Integer.parseInt(dim[1]));
+            Point temp = point(Integer.parseInt(dim[1]), Integer.parseInt(dim[2]));
             n++;
-            kdTree.insert(new double[]{Double.parseDouble(dim[0]),Double.parseDouble(dim[1])},point(Double.parseDouble(dim[0]),Double.parseDouble(dim[1])));
-           // rTree = rTree.add(n, temp);
+            kdTree.insert(new double[]{Double.parseDouble(dim[1]), Double.parseDouble(dim[2])}, point(Double.parseDouble(dim[1]), Double.parseDouble(dim[2])));
+            // rTree = rTree.add(n, temp);
             graph.addNode(temp);
         }
     }
@@ -148,8 +176,8 @@ public class Start {
                     out.println("*Node properties");
                     out.println("ID x y size color shortlabel");
                     for (Point point : graph.nodes())
-                        out.println( nodeToInteger.get(point) + " " + point.x() + " " + point.y() + " 10.0 153 "
-                                + nodeEdges.get(point).values().stream().mapToDouble(i -> i).sum() / nodeEdges.get(point).values().size() );
+                        out.println(nodeToInteger.get(point) + " " + point.x() + " " + point.y() + " 10.0 153 "
+                                + nodeEdges.get(point).values().stream().mapToDouble(i -> i).sum() / nodeEdges.get(point).values().size());
                     out.println(temp);
                     temp = "";
                     out.println("*Tie data");
@@ -158,12 +186,18 @@ public class Start {
                     for (Point point : graph.nodes()) {
                         HashMap<Point, Double> neighbors = nodeEdges.get(point);
                         for (Point point2 : neighbors.keySet())
-                            out.println( nodeToInteger.get(point) + " " + nodeToInteger.get(point2) + " " + neighbors.get(point2).intValue() );
+                            out.println(nodeToInteger.get(point) + " " + nodeToInteger.get(point2) + " " + neighbors.get(point2).intValue());
                     }
                     out.println(temp);
                     break;
             }
         } catch (Exception e) {
         }
+    }
+
+    private static boolean isGreater(Point a, Point b) {
+        if (a.x() > b.x()) return true;
+        if (a.x() == b.x() && a.y() > b.y()) return true;
+        return false;
     }
 }
